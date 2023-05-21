@@ -50,14 +50,32 @@ int	ft_isalpha(int a)
 	return (0);
 }
 
-
 void partida(jugador p1, jugador p2)
 {
+    int score1 = 0;
+    int score2 = 0;
     std::cout << "Partida creada " << p1.get_username() << " vs " << p2.get_username() << std::endl;
-    char *msg1 = (char *)std::format("La partida ya ha comenzado con {}!", p2.get_username()).c_str();
-    char *msg2 = (char *)std::format("La partida ya ha comenzado con {}!", p1.get_username()).c_str();
+    char *msg1 = (char *)std::format("La partida ya ha comenzado con {}!\nEsto es un mejor de 3!", p2.get_username()).c_str();
+    char *msg2 = (char *)std::format("La partida ya ha comenzado con {}!\nEsto es un mejor de 3!", p1.get_username()).c_str();
     send(p1.get_socket(), msg1, strlen(msg1), 0);
     send(p2.get_socket(), msg2, strlen(msg2), 0);
+
+    while (score1 < 2 && score2 < 2)
+    {
+        char *buf1 = (char *)calloc(1, sizeof(char));
+        char *buf2 = (char *)calloc(1, sizeof(char));
+        char *msg = (char *)"Escribe A para piedra, B para papel y C para tijera";
+        send(p1.get_socket(), msg, strlen(msg), 0);
+        recv(p1.get_socket(), buf1, 1, 0);
+        send(p2.get_socket(), msg, strlen(msg), 0);
+        recv(p1.get_socket(), buf1, 1, 0);
+        if (strcmp(buf1, buf2) == 0)
+        {
+            msg = (char *)"Empate!";
+            send(p1.get_socket(), msg, strlen(msg), 0);
+            send(p2.get_socket(), msg, strlen(msg), 0);
+        }
+    }
 }
 
 void cliente(SOCKET client_sock)
@@ -83,7 +101,8 @@ void cliente(SOCKET client_sock)
         NUM += 2;
         std::cout << CLIENTS[NUM-2] << USERNAMES.back() << std::endl;
         std::cout << CLIENTS[NUM-1] << username << std::endl;
-        partida(jugador(CLIENTS[NUM-2], USERNAMES.back()), jugador(CLIENTS[NUM-1], username));
+        std::thread partida_th(partida, jugador(CLIENTS[NUM-2], USERNAMES.back()), jugador(CLIENTS[NUM-1], username));
+        partida_th.detach();
         return ;
     }
     else
